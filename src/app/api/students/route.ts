@@ -51,9 +51,9 @@ export async function POST(request: Request) {
 
     const { name, email, phoneNumbers, batchId } = await request.json();
 
-    if (!name || !email || !batchId) {
+    if (!name || !batchId) {
       return Response.json(
-        { error: "Name, email, and batchId are required" },
+        { error: "Name and batchId are required" },
         { status: 400 }
       );
     }
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     const student = await prisma.student.create({
       data: {
         name,
-        email,
+        email: email || null,
         phoneNumbers: phoneNumbers ?? [],
         batchId,
       },

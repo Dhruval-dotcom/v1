@@ -90,9 +90,14 @@ export default function StudentsPage() {
                 {students?.map((s) => (
                   <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50/50">
                     <td className="px-4 py-3 text-gray-700 font-medium">{s.name}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{s.email}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{s.email || "-"}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">
-                      {s.phoneNumbers.length > 0 ? s.phoneNumbers.join(", ") : "-"}
+                      {s.phoneNumbers.length > 0 ? s.phoneNumbers.map((p, i) => (
+                        <span key={i}>
+                          {i > 0 && ", "}
+                          <a href={`tel:${p}`} className="text-blue-600 hover:underline">{p}</a>
+                        </span>
+                      )) : "-"}
                     </td>
                   </tr>
                 ))}

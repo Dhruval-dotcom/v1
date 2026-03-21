@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import useSWR from "swr";
 import Navbar from "@/components/Navbar";
-import Dialog from "@/components/Dialog";
 import { useAuth } from "@/hooks/useAuth";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -73,8 +72,6 @@ export default function IssueWarningPage() {
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [generatedMessage, setGeneratedMessage] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
-  const [tempMessage, setTempMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [copied, setCopied] = useState(false);
@@ -102,7 +99,7 @@ export default function IssueWarningPage() {
     if (!studentSearch.trim()) return students;
     const q = studentSearch.toLowerCase();
     return students.filter(
-      (s) => s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
+      (s) => s.name.toLowerCase().includes(q) || (s.email && s.email.toLowerCase().includes(q))
     );
   }, [students, studentSearch]);
 
@@ -128,49 +125,21 @@ export default function IssueWarningPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          warningTypeId,
-          studentId,
+          studentName: selectedStudent?.name,
+          warningTitle: selectedWarningType?.title,
+          severity: selectedWarningType?.severity,
           details: detailsText,
           actionPlan,
           date,
         }),
       });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
-        setTempMessage(data.message || "");
-        setMessageDialogOpen(true);
+        setGeneratedMessage(data.message || "");
       }
     } finally {
       setGenerating(false);
     }
-  };
-
-  const handleRegenerateMessage = async () => {
-    setGenerating(true);
-    try {
-      const res = await fetch("/api/warnings/generate-message", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          warningTypeId,
-          studentId,
-          details: detailsText,
-          actionPlan,
-          date,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTempMessage(data.message || "");
-      }
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const handleAcceptMessage = () => {
-    setGeneratedMessage(tempMessage);
-    setMessageDialogOpen(false);
   };
 
   const handleSave = async () => {
@@ -380,65 +349,58 @@ export default function IssueWarningPage() {
             />
           </div>
 
+          {/* Generate Message Button */}
+          {!generatedMessage && (
+            <div className="pt-2">
+              <button
+                onClick={handleGenerateMessage}
+                disabled={!canGenerate || generating}
+                className="neu-btn px-5 py-2 text-sm font-medium text-gray-600"
+              >
+                {generating ? "Generating..." : "Generate Message"}
+              </button>
+            </div>
+          )}
+
           {/* Generated Message Preview */}
           {generatedMessage && (
             <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-gray-500 uppercase">Generated Message</span>
-                <button
-                  onClick={handleCopy}
-                  className="neu-btn px-3 py-1 text-xs font-medium text-gray-600"
-                >
-                  {copied ? "Copied!" : "Copy"}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleGenerateMessage}
+                    disabled={generating}
+                    className="neu-btn px-3 py-1 text-xs font-medium text-gray-600"
+                  >
+                    {generating ? "Regenerating..." : "Regenerate"}
+                  </button>
+                  <button
+                    onClick={handleCopy}
+                    className="neu-btn px-3 py-1 text-xs font-medium text-gray-600"
+                  >
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
               </div>
               <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{generatedMessage}</pre>
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex flex-wrap gap-3 pt-2">
-            <button
-              onClick={handleGenerateMessage}
-              disabled={!canGenerate || generating}
-              className="neu-btn px-5 py-2 text-sm font-medium text-gray-600"
-            >
-              {generating ? "Generating..." : "Generate Message"}
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={!canSave || saving}
-              className="neu-btn-gradient px-5 py-2 text-sm font-medium"
-            >
-              {saving ? "Saving..." : "Save Warning"}
-            </button>
-          </div>
+          {/* Save Warning - only visible after message is generated */}
+          {generatedMessage && (
+            <div className="pt-2">
+              <button
+                onClick={handleSave}
+                disabled={!canSave || saving}
+                className="neu-btn-gradient px-5 py-2 text-sm font-medium"
+              >
+                {saving ? "Saving..." : "Save Warning"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Message Dialog */}
-      <Dialog open={messageDialogOpen} onClose={() => setMessageDialogOpen(false)} title="Generated WhatsApp Message">
-        <div className="space-y-4">
-          <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans p-4 rounded-lg bg-gray-50 border border-gray-200 max-h-64 overflow-y-auto">
-            {tempMessage}
-          </pre>
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={handleRegenerateMessage}
-              disabled={generating}
-              className="neu-btn px-4 py-2 text-sm font-medium text-gray-600"
-            >
-              {generating ? "Regenerating..." : "Regenerate"}
-            </button>
-            <button
-              onClick={handleAcceptMessage}
-              className="neu-btn-gradient px-4 py-2 text-sm font-medium"
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      </Dialog>
     </>
   );
 }

@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     const { warningTypeId, studentId, details, actionPlan, date, message } =
       await request.json();
 
-    if (!warningTypeId || !studentId || !details || !actionPlan || !date) {
+    if (!warningTypeId || !studentId || !details || !date) {
       return Response.json(
         { error: "All fields are required" },
         { status: 400 }

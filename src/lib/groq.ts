@@ -26,25 +26,36 @@ export async function generateWarningMessage(params: {
   const messages: Groq.Chat.ChatCompletionMessageParam[] = [
     {
       role: "system",
-      content: `You write SHORT, STRICT, HIGH-IMPACT warning messages for WhatsApp. Maximum 8-10 lines.
+      content: `You write SHORT, STRICT WhatsApp warning messages. 5-7 lines MAX. Under 100 words.
 
-Rules:
-- *bold* for emphasis, _italic_ for names/dates. No markdown, no hashtags, no bullet dashes.
-- Be direct. No pleasantries. No "Dear" or "Hope you're well". Get to the point.
-- Every word must hit hard. Cut filler ruthlessly.
-- Severity sets the tone: green=firm reminder, yellow=serious note, orange=strong warning, red=final warning tone, black=zero tolerance/last chance.
-- Structure: Name + Date → What happened → What must happen → Consequence (if orange+).
-- Keep it under 150 words. Shorter is better. Impact over length.`,
+Format rules:
+- Use *bold* for: student name, date, warning title, key action words, deadlines.
+- Use _italic_ sparingly for emphasis.
+- No markdown, no hashtags, no bullet points, no dashes, no numbered lists.
+- No greetings. No "Dear", "Hi", "Hope you're well". Start directly.
+
+Tone by severity:
+- green = polite but firm reminder
+- yellow = serious, clear expectations
+- orange = strong warning with consequences
+- red = final warning, urgent
+- black = zero tolerance, last chance before action
+
+Structure:
+Line 1: *Student Name* | *Date* | *Warning Title*
+Line 2-3: What happened (brief, factual)
+Line 4-5: What must be done${actionPlan ? " (use the action plan provided)" : ""}
+Line 6-7: Consequence (only for orange/red/black severity)
+
+Keep it tight. Every word counts. Polish the language — professional but stern.`,
     },
     {
       role: "user",
-      content: `Generate a WhatsApp warning message with these details:
-Student: ${studentName}
-Warning Type: ${warningTitle}
+      content: `Student: ${studentName}
+Warning: ${warningTitle}
 Severity: ${severity}
 Date: ${date}
-Description: ${details}
-Action Plan: ${actionPlan}`,
+Issue: ${details}${actionPlan ? `\nAction Plan: ${actionPlan}` : ""}`,
     },
   ];
 

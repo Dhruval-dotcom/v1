@@ -39,30 +39,37 @@ function severityEmoji(severity: string) {
   }
 }
 
-const SEVERITY_OPTIONS = ["green", "yellow", "orange", "red", "black"];
-
-const PRESET_SUGGESTIONS = [
-  { severity: "green", suggestions: "General Note, Heads Up" },
-  { severity: "yellow", suggestions: "Medium Priority, Important, Action Needed, Notice" },
-  { severity: "orange", suggestions: "High Priority Discussion, Urgent, Time-Sensitive, Important Alert" },
-  { severity: "red", suggestions: "Critical, Very Critical, Top Priority" },
-  { severity: "black", suggestions: "Immediate Action Required, Final Warning, Deadline Critical, Zero Tolerance Notice" },
+const SEVERITY_PRESETS = [
+  { label: "General Note", color: "green" },
+  { label: "Heads Up", color: "green" },
+  { label: "Medium Priority", color: "yellow" },
+  { label: "Important", color: "yellow" },
+  { label: "Action Needed", color: "yellow" },
+  { label: "Notice", color: "yellow" },
+  { label: "High Priority Discussion", color: "orange" },
+  { label: "Urgent", color: "orange" },
+  { label: "Time-Sensitive", color: "orange" },
+  { label: "Important Alert", color: "orange" },
+  { label: "Critical", color: "red" },
+  { label: "Very Critical", color: "red" },
+  { label: "Top Priority", color: "red" },
+  { label: "Immediate Action Required", color: "black" },
+  { label: "Final Warning", color: "black" },
+  { label: "Deadline Critical", color: "black" },
+  { label: "Zero Tolerance Notice", color: "black" },
 ];
 
 export default function WarningTypesPage() {
   const { user, isLoading: authLoading } = useAuth();
 
-  const [title, setTitle] = useState("");
-  const [severity, setSeverity] = useState("green");
+  const [selectedPreset, setSelectedPreset] = useState("");
   const [details, setDetails] = useState("");
   const [saving, setSaving] = useState(false);
-  const [refOpen, setRefOpen] = useState(false);
 
   // Edit state
   const [editOpen, setEditOpen] = useState(false);
   const [editId, setEditId] = useState("");
-  const [editTitle, setEditTitle] = useState("");
-  const [editSeverity, setEditSeverity] = useState("green");
+  const [editSelectedPreset, setEditSelectedPreset] = useState("");
   const [editDetails, setEditDetails] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
@@ -101,17 +108,18 @@ export default function WarningTypesPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!selectedPreset) return;
+    const preset = SEVERITY_PRESETS.find((p) => p.label === selectedPreset);
+    if (!preset) return;
     setSaving(true);
     try {
       const res = await fetch("/api/warning-types", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), severity, details: details.trim() }),
+        body: JSON.stringify({ title: preset.label, severity: preset.color, details: details.trim() }),
       });
       if (res.ok) {
-        setTitle("");
-        setSeverity("green");
+        setSelectedPreset("");
         setDetails("");
         mutate();
       }
@@ -122,20 +130,21 @@ export default function WarningTypesPage() {
 
   const openEdit = (wt: WarningType) => {
     setEditId(wt.id);
-    setEditTitle(wt.title);
-    setEditSeverity(wt.severity);
+    setEditSelectedPreset(wt.title);
     setEditDetails(wt.details);
     setEditOpen(true);
   };
 
   const handleEdit = async () => {
-    if (!editTitle.trim()) return;
+    if (!editSelectedPreset) return;
+    const preset = SEVERITY_PRESETS.find((p) => p.label === editSelectedPreset);
+    if (!preset) return;
     setEditSaving(true);
     try {
       const res = await fetch(`/api/warning-types/${editId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: editTitle.trim(), severity: editSeverity, details: editDetails.trim() }),
+        body: JSON.stringify({ title: preset.label, severity: preset.color, details: editDetails.trim() }),
       });
       if (res.ok) {
         setEditOpen(false);
@@ -177,67 +186,24 @@ export default function WarningTypesPage() {
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-700 mb-6">Warning Types</h1>
 
-        {/* Preset Suggestions (collapsible) */}
-        <div className="neu-raised p-4 mb-6">
-          <button
-            onClick={() => setRefOpen(!refOpen)}
-            className="flex items-center gap-2 text-sm font-medium text-gray-600 w-full text-left"
-          >
-            <svg
-              className={`w-4 h-4 transition-transform ${refOpen ? "rotate-90" : ""}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            Preset Suggestions (Reference)
-          </button>
-          {refOpen && (
-            <div className="mt-3 space-y-2">
-              {PRESET_SUGGESTIONS.map((ps) => (
-                <div key={ps.severity} className="flex items-start gap-2 text-sm">
-                  <span
-                    className={`inline-block px-2 py-0.5 rounded border text-xs font-medium ${severityColor(ps.severity)}`}
-                  >
-                    {severityEmoji(ps.severity)} {ps.severity}
-                  </span>
-                  <span className="text-gray-600">{ps.suggestions}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Create Form */}
         <form onSubmit={handleCreate} className="neu-raised p-6 mb-6 space-y-4">
           <h2 className="text-lg font-semibold text-gray-700">Add Warning Type</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Critical, Final Warning"
-                className="neu-input w-full px-3 py-2 text-sm"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Severity</label>
-              <select
-                value={severity}
-                onChange={(e) => setSeverity(e.target.value)}
-                className="neu-input w-full px-3 py-2 text-sm"
-              >
-                {SEVERITY_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {severityEmoji(s)} {s.charAt(0).toUpperCase() + s.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Severity</label>
+            <select
+              value={selectedPreset}
+              onChange={(e) => setSelectedPreset(e.target.value)}
+              className="neu-input w-full px-3 py-2 text-sm"
+              required
+            >
+              <option value="">Select a severity level...</option>
+              {SEVERITY_PRESETS.map((p) => (
+                <option key={p.label} value={p.label}>
+                  {severityEmoji(p.color)} {p.label}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Details</label>
@@ -251,7 +217,7 @@ export default function WarningTypesPage() {
           </div>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || !selectedPreset}
             className="neu-btn-gradient px-5 py-2 text-sm font-medium"
           >
             {saving ? "Saving..." : "Add Warning Type"}
@@ -265,7 +231,6 @@ export default function WarningTypesPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left px-4 py-3 text-gray-600 font-medium">Severity</th>
-                  <th className="text-left px-4 py-3 text-gray-600 font-medium">Title</th>
                   <th className="text-left px-4 py-3 text-gray-600 font-medium">Details</th>
                   <th className="text-right px-4 py-3 text-gray-600 font-medium">Actions</th>
                 </tr>
@@ -273,7 +238,7 @@ export default function WarningTypesPage() {
               <tbody>
                 {sorted.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
+                    <td colSpan={3} className="px-4 py-6 text-center text-gray-400">
                       No warning types yet.
                     </td>
                   </tr>
@@ -284,10 +249,9 @@ export default function WarningTypesPage() {
                       <span
                         className={`inline-block px-2 py-0.5 rounded border text-xs font-medium ${severityColor(wt.severity)}`}
                       >
-                        {severityEmoji(wt.severity)} {wt.severity}
+                        {severityEmoji(wt.severity)} {wt.title}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-700 font-medium">{wt.title}</td>
                     <td className="px-4 py-3 text-gray-500">{wt.details || "—"}</td>
                     <td className="px-4 py-3 text-right">
                       <button
@@ -315,24 +279,16 @@ export default function WarningTypesPage() {
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} title="Edit Warning Type">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Title</label>
-            <input
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              className="neu-input w-full px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Severity</label>
             <select
-              value={editSeverity}
-              onChange={(e) => setEditSeverity(e.target.value)}
+              value={editSelectedPreset}
+              onChange={(e) => setEditSelectedPreset(e.target.value)}
               className="neu-input w-full px-3 py-2 text-sm"
             >
-              {SEVERITY_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {severityEmoji(s)} {s.charAt(0).toUpperCase() + s.slice(1)}
+              <option value="">Select a severity level...</option>
+              {SEVERITY_PRESETS.map((p) => (
+                <option key={p.label} value={p.label}>
+                  {severityEmoji(p.color)} {p.label}
                 </option>
               ))}
             </select>

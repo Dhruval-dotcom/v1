@@ -39,8 +39,8 @@ export default function AddStudentPage() {
     e.preventDefault();
     setError("");
 
-    if (!name.trim() || !email.trim() || !batchId) {
-      setError("Name, email, and batch are required.");
+    if (!name.trim() || !batchId) {
+      setError("Name and batch are required.");
       return;
     }
 
@@ -86,14 +86,13 @@ export default function AddStudentPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Email <span className="text-gray-400 font-normal">(optional)</span></label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="neu-input w-full"
                 placeholder="student@example.com"
-                required
               />
             </div>
 
