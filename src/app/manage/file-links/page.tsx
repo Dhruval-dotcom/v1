@@ -47,6 +47,9 @@ export default function ManageFileLinksPage() {
   const [formError, setFormError] = useState("");
   const [formLoading, setFormLoading] = useState(false);
 
+  // Filter state
+  const [filterGrade, setFilterGrade] = useState("");
+
   // Delete state
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState("");
@@ -132,9 +135,10 @@ export default function ManageFileLinksPage() {
     }
   };
 
-  const truncateUrl = (url: string, maxLen = 40) => {
-    return url.length > maxLen ? url.slice(0, maxLen) + "..." : url;
-  };
+  const filteredFileLinks = fileLinks?.filter((fl) => {
+    if (!filterGrade) return true;
+    return fl.grade === filterGrade;
+  });
 
   return (
     <>
@@ -147,6 +151,22 @@ export default function ManageFileLinksPage() {
           </button>
         </div>
 
+        {/* Grade Filter */}
+        <div className="mb-4">
+          <select
+            value={filterGrade}
+            onChange={(e) => setFilterGrade(e.target.value)}
+            className="neu-input px-3 py-2 text-sm w-full sm:w-64"
+          >
+            <option value="">All Grades</option>
+            {gradeLinks.map((gl) => (
+              <option key={gl.id} value={gl.label}>
+                {gl.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {isLoading && <p className="text-gray-500 text-sm">Loading...</p>}
         {error && <p className="text-red-500 text-sm">Failed to load file links.</p>}
 
@@ -157,20 +177,19 @@ export default function ManageFileLinksPage() {
                 <tr className="border-b border-gray-200">
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Title</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Route</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">URL</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Grade</th>
                   <th className="text-right px-4 py-3 font-semibold text-gray-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {fileLinks && fileLinks.length === 0 && (
+                {filteredFileLinks && filteredFileLinks.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                    <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
                       No file links found.
                     </td>
                   </tr>
                 )}
-                {fileLinks?.map((fl) => (
+                {filteredFileLinks?.map((fl) => (
                   <tr key={fl.id} className="border-b border-gray-100 hover:bg-gray-50/50">
                     <td className="px-4 py-3 text-gray-700 font-medium">{fl.title}</td>
                     <td className="px-4 py-3">
@@ -182,9 +201,6 @@ export default function ManageFileLinksPage() {
                       >
                         /file/{fl.route}
                       </a>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs" title={fl.url}>
-                      {truncateUrl(fl.url)}
                     </td>
                     <td className="px-4 py-3 text-gray-500">{fl.grade || "-"}</td>
                     <td className="px-4 py-3 text-right">
@@ -271,7 +287,7 @@ export default function ManageFileLinksPage() {
             >
               <option value="">-- No grade --</option>
               {gradeLinks.map((gl) => (
-                <option key={gl.id} value={gl.href.replace("/", "")}>
+                <option key={gl.id} value={gl.label}>
                   {gl.label}
                 </option>
               ))}

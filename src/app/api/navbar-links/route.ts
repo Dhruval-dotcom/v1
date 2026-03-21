@@ -46,6 +46,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const existing = await prisma.navbarLink.findUnique({ where: { href } });
+    if (existing) {
+      return Response.json(
+        { error: "A navbar link with this href already exists" },
+        { status: 409 }
+      );
+    }
+
     const link = await prisma.navbarLink.create({
       data: {
         label,

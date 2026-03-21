@@ -73,6 +73,20 @@ function severityEmoji(severity: string) {
 
 const PAGE_SIZE = 15;
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button onClick={handleCopy} className="neu-btn px-2 py-0.5 text-xs text-gray-500 mt-1">
+      {copied ? "Copied!" : "Copy"}
+    </button>
+  );
+}
+
 export default function WarningsPage() {
   const { user, isLoading: authLoading } = useAuth();
 
@@ -184,14 +198,11 @@ export default function WarningsPage() {
   const totalPages = warningsData?.totalPages || 1;
   const warnings = warningsData?.warnings || [];
 
-  const truncate = (text: string, len: number) =>
-    text && text.length > len ? text.slice(0, len) + "..." : text || "—";
-
   if (authLoading) {
     return (
       <>
         <Navbar />
-        <div className="mx-auto max-w-6xl px-4 py-8">
+        <div className="mx-auto max-w-7xl px-4 py-8">
           <p className="text-gray-500">Loading...</p>
         </div>
       </>
@@ -202,7 +213,7 @@ export default function WarningsPage() {
     return (
       <>
         <Navbar />
-        <div className="mx-auto max-w-6xl px-4 py-8">
+        <div className="mx-auto max-w-7xl px-4 py-8">
           <p className="text-red-500">Access denied.</p>
         </div>
       </>
@@ -212,7 +223,7 @@ export default function WarningsPage() {
   return (
     <>
       <Navbar />
-      <div className="mx-auto max-w-6xl px-4 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-700 mb-6">Warnings</h1>
 
         {/* Filters */}
@@ -270,9 +281,7 @@ export default function WarningsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="text-left px-4 py-3 text-gray-600 font-medium">Date</th>
-                    <th className="text-left px-4 py-3 text-gray-600 font-medium">Student</th>
-                    <th className="text-left px-4 py-3 text-gray-600 font-medium">Warning Type</th>
+                    <th className="text-left px-4 py-3 text-gray-600 font-medium w-[180px]">Warning</th>
                     <th className="text-left px-4 py-3 text-gray-600 font-medium">Details</th>
                     <th className="text-left px-4 py-3 text-gray-600 font-medium">Action Plan</th>
                     <th className="text-left px-4 py-3 text-gray-600 font-medium">Message</th>
@@ -282,28 +291,37 @@ export default function WarningsPage() {
                 <tbody>
                   {warnings.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                      <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
                         No warnings found.
                       </td>
                     </tr>
                   )}
                   {warnings.map((w) => (
-                    <tr key={w.id} className="border-b border-gray-100 hover:bg-gray-50/50">
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                        {w.date ? new Date(w.date).toLocaleDateString() : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-gray-700 font-medium">{w.student?.name || "—"}</td>
+                    <tr key={w.id} className="border-b border-gray-100 hover:bg-gray-50/50 align-top">
                       <td className="px-4 py-3">
+                        <div className="text-gray-700 font-medium">{w.student?.name || "—"}</div>
+                        <div className="text-xs text-gray-400 mt-0.5">
+                          {w.date ? new Date(w.date).toLocaleDateString() : "—"}
+                        </div>
                         <span
-                          className={`inline-block px-2 py-0.5 rounded border text-xs font-medium ${severityColor(w.warningType?.severity)}`}
+                          className={`inline-block px-2 py-0.5 rounded border text-xs font-medium mt-1 ${severityColor(w.warningType?.severity)}`}
                         >
                           {severityEmoji(w.warningType?.severity)} {w.warningType?.title}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500 max-w-[150px]">{truncate(w.details, 40)}</td>
-                      <td className="px-4 py-3 text-gray-500 max-w-[150px]">{truncate(w.actionPlan, 40)}</td>
-                      <td className="px-4 py-3 text-gray-500 max-w-[120px]">
-                        {w.message ? truncate(w.message, 30) : "No message"}
+                      <td className="px-4 py-3 text-gray-500">
+                        <div className="line-clamp-3">{w.details || "—"}</div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        <div className="line-clamp-3">{w.actionPlan || "—"}</div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {w.message ? (
+                          <div>
+                            <div className="whitespace-pre-wrap text-xs line-clamp-3">{w.message}</div>
+                            <CopyButton text={w.message} />
+                          </div>
+                        ) : "—"}
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <button

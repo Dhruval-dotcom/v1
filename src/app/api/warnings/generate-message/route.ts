@@ -19,16 +19,9 @@ export async function POST(request: Request) {
     const { studentName, warningTitle, severity, details, actionPlan, date } =
       await request.json();
 
-    if (
-      !studentName ||
-      !warningTitle ||
-      !severity ||
-      !details ||
-      !actionPlan ||
-      !date
-    ) {
+    if (!studentName || !warningTitle || !severity || !details || !date) {
       return Response.json(
-        { error: "All fields are required" },
+        { error: "Student, warning type, severity, details, and date are required" },
         { status: 400 }
       );
     }
@@ -38,7 +31,7 @@ export async function POST(request: Request) {
       warningTitle,
       severity,
       details,
-      actionPlan,
+      actionPlan: actionPlan || "",
       date,
     });
 

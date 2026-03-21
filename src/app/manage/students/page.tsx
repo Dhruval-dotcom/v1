@@ -86,8 +86,8 @@ export default function ManageStudentsPage() {
     e.preventDefault();
     setEditError("");
 
-    if (!editName.trim() || !editEmail.trim() || !editBatchId) {
-      setEditError("Name, email, and batch are required.");
+    if (!editName.trim() || !editBatchId) {
+      setEditError("Name and batch are required.");
       return;
     }
 
@@ -99,7 +99,7 @@ export default function ManageStudentsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: editName,
-          email: editEmail,
+          email: editEmail.trim() || null,
           phoneNumbers: phones,
           batchId: editBatchId,
         }),
@@ -178,7 +178,7 @@ export default function ManageStudentsPage() {
     const q = search.toLowerCase();
     return (
       s.name.toLowerCase().includes(q) ||
-      s.email.toLowerCase().includes(q) ||
+      (s.email && s.email.toLowerCase().includes(q)) ||
       s.phoneNumbers.some((p) => p.includes(q))
     );
   });
@@ -267,9 +267,14 @@ export default function ManageStudentsPage() {
                 {filteredStudents?.map((s) => (
                   <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50/50">
                     <td className="px-4 py-3 text-gray-700 font-medium">{s.name}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{s.email}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{s.email || "-"}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">
-                      {s.phoneNumbers.length > 0 ? s.phoneNumbers.join(", ") : "-"}
+                      {s.phoneNumbers.length > 0 ? s.phoneNumbers.map((p, i) => (
+                        <span key={i}>
+                          {i > 0 && ", "}
+                          <a href={`tel:${p}`} className="text-blue-600 hover:underline">{p}</a>
+                        </span>
+                      )) : "-"}
                     </td>
                     <td className="px-4 py-3 text-gray-500">{s.batch?.name || "-"}</td>
                     <td className="px-4 py-3 text-center">
@@ -343,13 +348,12 @@ export default function ManageStudentsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Email <span className="text-gray-400 font-normal">(optional)</span></label>
             <input
               type="email"
               value={editEmail}
               onChange={(e) => setEditEmail(e.target.value)}
               className="neu-input w-full"
-              required
             />
           </div>
           <div>

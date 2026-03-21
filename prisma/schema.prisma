@@ -25,7 +25,7 @@ model Batch {
 model Student {
   id           String     @id @default(cuid())
   name         String
-  email        String     @unique
+  email        String?    @unique
   phoneNumbers String[]
   batchId      String
   batch        Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
