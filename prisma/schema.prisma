@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model SuperAdmin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+}
+
+model Batch {
+  id        String    @id @default(cuid())
+  name      String
+  createdAt DateTime  @default(now())
+  students  Student[]
+}
+
+model Student {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  phoneNumbers String[]
+  batchId      String
+  batch        Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  adminRole    AdminRole?
+  warnings     Warning[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model AdminRole {
+  id        String   @id @default(cuid())
+  studentId String   @unique
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  password  String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  content   String
+  link      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NavbarLink {
+  id         String   @id @default(cuid())
+  label      String
+  href       String   @unique
+  isGradePage Boolean @default(false)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model FileLink {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  route       String   @unique
+  url         String
+  grade       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WarningType {
+  id        String    @id @default(cuid())
+  title     String    @unique
+  severity  String    // green, yellow, orange, red, black
+  details   String
+  createdAt DateTime  @default(now())
+  warnings  Warning[]
+}
+
+model Warning {
+  id            String      @id @default(cuid())
+  warningTypeId String
+  warningType   WarningType @relation(fields: [warningTypeId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  details       String
+  actionPlan    String
+  date          DateTime
+  message       String?     // Generated WhatsApp message
+  createdById   String      // ID of admin or super_admin who created
+  createdByRole String      // "super_admin" or "admin"
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
