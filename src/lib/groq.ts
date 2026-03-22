@@ -46,7 +46,7 @@ TONE:
 - Adjust tone slightly based on severity but do NOT exaggerate
 
 OUTPUT STRUCTURE:
-Line 1: ⚠️ *Warning: [Title]*
+Line 1: ⚠️ *[Title]*
 Line 2: *Student:* [Name]
 Line 3: *Date:* [Date]
 Line 4: *Issue:* [Polished short sentence]
