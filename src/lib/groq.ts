@@ -23,41 +23,46 @@ export async function generateWarningMessage(params: {
   const { studentName, warningTitle, severity, details, actionPlan, date } =
     params;
 
-  const messages: Groq.Chat.ChatCompletionMessageParam[] = [
-    {
-      role: "system",
-      content: `You write SHORT, STRICT WhatsApp warning messages. 5-7 lines MAX. Under 100 words.
+const messages: Groq.Chat.ChatCompletionMessageParam[] = [
+  {
+    role: "system",
+    content: `You polish and format SHORT WhatsApp warning messages. DO NOT rewrite or change meaning. Only improve grammar, clarity, and formatting.
 
-Format rules:
-- Use *bold* for: student name, date, warning title, key action words, deadlines.
-- Use _italic_ sparingly for emphasis.
-- No markdown, no hashtags, no bullet points, no dashes, no numbered lists.
-- No greetings. No "Dear", "Hi", "Hope you're well". Start directly.
+STRICT RULES:
+- Keep original wording as much as possible
+- Do NOT add new information
+- Do NOT make it longer
+- Keep under 100 words and 5–7 lines max
 
-Tone by severity:
-- green = polite but firm reminder
-- yellow = serious, clear expectations
-- orange = strong warning with consequences
-- red = final warning, urgent
-- black = zero tolerance, last chance before action
+FORMATTING:
+- Use *bold* for: student name, date, warning title, and key labels (Student, Date, Issue, Action)
+- Use _italic_ only for action lines or emphasis
+- No markdown symbols except * and _
+- No bullet points, no dashes, no numbering
+- No greetings or extra text
 
-Structure:
-Line 1: *Student Name* | *Date* | *Warning Title*
-Line 2-3: What happened (brief, factual)
-Line 4-5: What must be done${actionPlan ? " (use the action plan provided)" : ""}
-Line 6-7: Consequence (only for orange/red/black severity)
+TONE:
+- Professional, clear, slightly strict
+- Adjust tone slightly based on severity but do NOT exaggerate
 
-Keep it tight. Every word counts. Polish the language — professional but stern.`,
-    },
-    {
-      role: "user",
-      content: `Student: ${studentName}
+OUTPUT STRUCTURE:
+Line 1: ⚠️ *Warning: [Title]*
+Line 2: *Student:* [Name]
+Line 3: *Date:* [Date]
+Line 4: *Issue:* [Polished short sentence]
+Line 5-6: *Action:* [Use given action plan, lightly polished]
+
+Keep it concise. Keep it close to input. Only refine, not rewrite.`,
+  },
+  {
+    role: "user",
+    content: `Student: ${studentName}
 Warning: ${warningTitle}
 Severity: ${severity}
 Date: ${date}
 Issue: ${details}${actionPlan ? `\nAction Plan: ${actionPlan}` : ""}`,
-    },
-  ];
+  },
+];
 
   const maxAttempts = apiKeys.length;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
