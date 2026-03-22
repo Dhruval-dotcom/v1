@@ -269,14 +269,33 @@ export default function ManageFileLinksPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">URL</label>
-            <input
-              type="text"
-              value={formUrl}
-              onChange={(e) => setFormUrl(e.target.value)}
-              className="neu-input w-full"
-              placeholder="https://drive.google.com/..."
-              required
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={formUrl}
+                onChange={(e) => setFormUrl(e.target.value)}
+                className="neu-input w-full"
+                placeholder="https://drive.google.com/..."
+                required
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const text = await navigator.clipboard.readText();
+                    if (text) setFormUrl(text);
+                  } catch {
+                    // clipboard access denied
+                  }
+                }}
+                className="neu-btn px-3 py-2 flex-shrink-0"
+                title="Paste from clipboard"
+              >
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Grade (optional)</label>

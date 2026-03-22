@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import CopyLinkButton from "@/components/CopyLinkButton";
 
 export const revalidate = 60;
 
@@ -47,7 +48,7 @@ export default async function GradePage({
                 href={`/file/${link.route}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="neu-raised p-5 block hover:shadow-lg transition-shadow group"
+                className="neu-raised px-5 py-2.5 block hover:shadow-lg transition-shadow group"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -58,9 +59,12 @@ export default async function GradePage({
                       <p className="text-sm text-gray-400 mt-1">{link.description}</p>
                     )}
                   </div>
-                  <svg className="w-5 h-5 text-gray-400 group-hover:text-[#667eea] mt-0.5 flex-shrink-0 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
+                  <div className="flex items-center gap-3 shrink-0 ml-3 mt-0.5">
+                    <CopyLinkButton route={link.route} />
+                    <svg className="w-5 h-5 text-gray-400 group-hover:text-[#667eea]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </div>
                 </div>
               </a>
             ))}
