@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import Navbar from "@/components/Navbar";
 import Dialog from "@/components/Dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
+import { TableLoader } from "@/components/Loader";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+const PAGE_SIZES = [25, 40, 50];
 
 interface Batch {
   id: string;
@@ -26,24 +29,54 @@ interface Student {
   createdAt: string;
 }
 
+interface StudentsResponse {
+  students: Student[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 export default function ManageStudentsPage() {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
 
   const [selectedBatchId, setSelectedBatchId] = useState("");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset page on filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [selectedBatchId, debouncedSearch, pageSize]);
 
   const { data: batches } = useSWR<(Batch & { _count: { students: number } })[]>(
     "/api/batches",
     fetcher
   );
 
-  const { data: students, error, isLoading, mutate } = useSWR<Student[]>(
-    selectedBatchId
-      ? `/api/students?batchId=${selectedBatchId}`
-      : "/api/students",
+  // Build query string for paginated API
+  const queryParams = new URLSearchParams();
+  if (selectedBatchId) queryParams.set("batchId", selectedBatchId);
+  if (debouncedSearch) queryParams.set("search", debouncedSearch);
+  queryParams.set("page", String(page));
+  queryParams.set("limit", String(pageSize));
+
+  const { data: studentsData, error, isLoading, mutate } = useSWR<StudentsResponse>(
+    `/api/students?${queryParams.toString()}`,
     fetcher
   );
+
+  const students = studentsData?.students || [];
+  const totalPages = studentsData?.totalPages || 1;
+  const total = studentsData?.total || 0;
 
   // Edit dialog state
   const [editOpen, setEditOpen] = useState(false);
@@ -64,6 +97,7 @@ export default function ManageStudentsPage() {
   const [makeAdminOpen, setMakeAdminOpen] = useState(false);
   const [makeAdminId, setMakeAdminId] = useState("");
   const [makeAdminPassword, setMakeAdminPassword] = useState("");
+  const [makeAdminShowPassword, setMakeAdminShowPassword] = useState(false);
   const [makeAdminError, setMakeAdminError] = useState("");
   const [makeAdminLoading, setMakeAdminLoading] = useState(false);
 
@@ -152,6 +186,7 @@ export default function ManageStudentsPage() {
       }
       setMakeAdminOpen(false);
       setMakeAdminPassword("");
+      setMakeAdminShowPassword(false);
       mutate();
     } catch {
       setMakeAdminError("Network error. Please try again.");
@@ -172,16 +207,6 @@ export default function ManageStudentsPage() {
       setRemoveAdminLoading(false);
     }
   };
-
-  const filteredStudents = students?.filter((s) => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      s.name.toLowerCase().includes(q) ||
-      (s.email && s.email.toLowerCase().includes(q)) ||
-      s.phoneNumbers.some((p) => p.includes(q))
-    );
-  });
 
   const addPhoneField = () => setEditPhones([...editPhones, ""]);
   const removePhoneField = (index: number) => {
@@ -238,9 +263,11 @@ export default function ManageStudentsPage() {
           </div>
         </div>
 
-        {isLoading && <p className="text-gray-500 text-sm">Loading students...</p>}
         {error && <p className="text-red-500 text-sm">Failed to load students.</p>}
 
+        {isLoading ? (
+          <TableLoader columns={isSuperAdmin ? 6 : 5} rows={6} />
+        ) : (
         <div className="neu-raised overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -257,14 +284,14 @@ export default function ManageStudentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredStudents && filteredStudents.length === 0 && (
+                {students.length === 0 && (
                   <tr>
                     <td colSpan={isSuperAdmin ? 6 : 5} className="px-4 py-8 text-center text-gray-400">
                       No students found.
                     </td>
                   </tr>
                 )}
-                {filteredStudents?.map((s) => (
+                {students.map((s) => (
                   <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50/50">
                     <td className="px-4 py-3 text-gray-700 font-medium">{s.name}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{s.email || "-"}</td>
@@ -315,6 +342,7 @@ export default function ManageStudentsPage() {
                               onClick={() => {
                                 setMakeAdminId(s.id);
                                 setMakeAdminPassword("");
+                                setMakeAdminShowPassword(false);
                                 setMakeAdminError("");
                                 setMakeAdminOpen(true);
                               }}
@@ -331,7 +359,47 @@ export default function ManageStudentsPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 gap-3">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>Show</span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="neu-input px-2 py-1 text-xs"
+              >
+                {PAGE_SIZES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              <span>per page</span>
+              <span className="text-gray-400 ml-2">({total} total)</span>
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="neu-btn px-3 py-1.5 text-xs font-medium text-gray-600 disabled:opacity-40"
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-gray-500">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className="neu-btn px-3 py-1.5 text-xs font-medium text-gray-600 disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+        )}
       </div>
 
       {/* Edit Dialog */}
@@ -445,14 +513,32 @@ export default function ManageStudentsPage() {
           </p>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Password</label>
-            <input
-              type="password"
-              value={makeAdminPassword}
-              onChange={(e) => setMakeAdminPassword(e.target.value)}
-              className="neu-input w-full"
-              placeholder="Enter admin password"
-              required
-            />
+            <div className="relative">
+              <input
+                type={makeAdminShowPassword ? "text" : "password"}
+                value={makeAdminPassword}
+                onChange={(e) => setMakeAdminPassword(e.target.value)}
+                className="neu-input w-full pr-10"
+                placeholder="Enter admin password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setMakeAdminShowPassword(!makeAdminShowPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {makeAdminShowPassword ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
           {makeAdminError && <p className="text-sm text-red-500">{makeAdminError}</p>}
           <div className="flex justify-end gap-3">

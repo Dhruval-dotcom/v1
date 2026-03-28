@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import useSWR from "swr";
+import { NavbarLoader } from "@/components/Loader";
 
 const fetcher = (url: string) =>
   fetch(url).then((r) => {
@@ -33,7 +34,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
-  const { data: links } = useSWR<NavbarLink[]>("/api/navbar-links", fetcher);
+  const { data: links, isLoading: linksLoading } = useSWR<NavbarLink[]>("/api/navbar-links", fetcher);
   const { data: meData, mutate: mutateUser } = useSWR<{ user: User }>("/api/auth/me", fetcher, {
     onError: () => {},
   });
@@ -89,17 +90,21 @@ export default function Navbar() {
               Home
             </Link>
 
-            {links?.map((link) => (
-              <Link
-                key={link.id}
-                href={link.href}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive(link.href) ? "bg-primary text-gray-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {linksLoading ? (
+              <NavbarLoader />
+            ) : (
+              links?.map((link) => (
+                <Link
+                  key={link.id}
+                  href={link.href}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive(link.href) ? "bg-primary text-gray-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))
+            )}
 
             {/* Admin dropdown */}
             {user && user.role === "super_admin" && (
@@ -207,15 +212,21 @@ export default function Navbar() {
             <Link href="/" className={`block px-3 py-2 rounded-lg text-sm ${isActive("/") ? "bg-primary" : "hover:bg-gray-200"}`}>
               Home
             </Link>
-            {links?.map((link) => (
-              <Link
-                key={link.id}
-                href={link.href}
-                className={`block px-3 py-2 rounded-lg text-sm ${isActive(link.href) ? "bg-primary" : "hover:bg-gray-200"}`}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {linksLoading ? (
+              <div className="px-3 py-2">
+                <NavbarLoader />
+              </div>
+            ) : (
+              links?.map((link) => (
+                <Link
+                  key={link.id}
+                  href={link.href}
+                  className={`block px-3 py-2 rounded-lg text-sm ${isActive(link.href) ? "bg-primary" : "hover:bg-gray-200"}`}
+                >
+                  {link.label}
+                </Link>
+              ))
+            )}
             {user?.role === "super_admin" && adminLinks.map((link) => (
               <Link
                 key={link.href}

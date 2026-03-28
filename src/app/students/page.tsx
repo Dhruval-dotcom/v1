@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
+import Loader, { TableLoader } from "@/components/Loader";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -38,7 +39,7 @@ export default function StudentsPage() {
       <>
         <Navbar />
         <div className="mx-auto max-w-4xl px-4 py-6">
-          <p className="text-gray-500 text-sm">Loading...</p>
+          <Loader text="Loading..." />
         </div>
       </>
     );
@@ -66,9 +67,11 @@ export default function StudentsPage() {
           )}
         </div>
 
-        {isLoading && <p className="text-gray-500 text-sm">Loading students...</p>}
         {error && <p className="text-red-500 text-sm">Failed to load students.</p>}
 
+        {isLoading ? (
+          <TableLoader columns={3} rows={5} />
+        ) : (
         <div className="neu-raised overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -105,6 +108,7 @@ export default function StudentsPage() {
             </table>
           </div>
         </div>
+        )}
       </div>
     </>
   );

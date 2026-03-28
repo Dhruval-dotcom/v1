@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Dialog from "@/components/Dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useAuth } from "@/hooks/useAuth";
+import Loader, { TableLoader } from "@/components/Loader";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -79,7 +80,7 @@ export default function WarningTypesPage() {
   const [deleteName, setDeleteName] = useState("");
   const [deleting, setDeleting] = useState(false);
 
-  const { data: warningTypes, mutate } = useSWR<WarningType[]>(
+  const { data: warningTypes, isLoading: dataLoading, mutate } = useSWR<WarningType[]>(
     "/api/warning-types",
     fetcher
   );
@@ -89,7 +90,7 @@ export default function WarningTypesPage() {
       <>
         <Navbar />
         <div className="mx-auto max-w-4xl px-4 py-8">
-          <p className="text-gray-500">Loading...</p>
+          <Loader text="Loading..." />
         </div>
       </>
     );
@@ -225,6 +226,9 @@ export default function WarningTypesPage() {
         </form>
 
         {/* Warning Types Table */}
+        {dataLoading ? (
+          <TableLoader columns={3} rows={4} />
+        ) : (
         <div className="neu-raised overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -273,6 +277,7 @@ export default function WarningTypesPage() {
             </table>
           </div>
         </div>
+        )}
       </div>
 
       {/* Edit Dialog */}
