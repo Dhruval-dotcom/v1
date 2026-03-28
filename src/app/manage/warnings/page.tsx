@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Dialog from "@/components/Dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useAuth } from "@/hooks/useAuth";
+import Loader, { TableLoader } from "@/components/Loader";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -71,7 +72,7 @@ function severityEmoji(severity: string) {
   }
 }
 
-const PAGE_SIZE = 15;
+const PAGE_SIZES = [25, 40, 50];
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -93,6 +94,7 @@ export default function WarningsPage() {
   const [batchId, setBatchId] = useState("");
   const [studentFilter, setStudentFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // Edit state
   const [editOpen, setEditOpen] = useState(false);
@@ -125,9 +127,9 @@ export default function WarningsPage() {
   if (batchId) queryParams.set("batchId", batchId);
   if (studentFilter) queryParams.set("studentId", studentFilter);
   queryParams.set("page", String(page));
-  queryParams.set("pageSize", String(PAGE_SIZE));
+  queryParams.set("limit", String(pageSize));
 
-  const { data: warningsData, mutate } = useSWR<WarningsResponse>(
+  const { data: warningsData, isLoading: warningsLoading, mutate } = useSWR<WarningsResponse>(
     batchId ? `/api/warnings?${queryParams.toString()}` : null,
     fetcher
   );
@@ -141,7 +143,7 @@ export default function WarningsPage() {
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [batchId, studentFilter]);
+  }, [batchId, studentFilter, pageSize]);
 
   const openEdit = (w: Warning) => {
     setEditId(w.id);
@@ -203,7 +205,7 @@ export default function WarningsPage() {
       <>
         <Navbar />
         <div className="mx-auto max-w-7xl px-4 py-8">
-          <p className="text-gray-500">Loading...</p>
+          <Loader text="Loading..." />
         </div>
       </>
     );
@@ -275,6 +277,8 @@ export default function WarningsPage() {
           <div className="neu-raised p-8 text-center text-gray-400 text-sm">
             Select a batch to view warnings.
           </div>
+        ) : warningsLoading ? (
+          <TableLoader columns={5} rows={5} />
         ) : (
           <div className="neu-raised overflow-hidden">
             <div className="overflow-x-auto">
@@ -344,27 +348,43 @@ export default function WarningsPage() {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="neu-btn px-4 py-1.5 text-sm font-medium text-gray-600 disabled:opacity-40"
+            <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 gap-3">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <span>Show</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="neu-input px-2 py-1 text-xs"
                 >
-                  Previous
-                </button>
-                <span className="text-sm text-gray-500">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="neu-btn px-4 py-1.5 text-sm font-medium text-gray-600 disabled:opacity-40"
-                >
-                  Next
-                </button>
+                  {PAGE_SIZES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+                <span>per page</span>
+                <span className="text-gray-400 ml-2">({warningsData?.total || 0} total)</span>
               </div>
-            )}
+              {totalPages > 1 && (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="neu-btn px-3 py-1.5 text-xs font-medium text-gray-600 disabled:opacity-40"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-gray-500">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                    className="neu-btn px-3 py-1.5 text-xs font-medium text-gray-600 disabled:opacity-40"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

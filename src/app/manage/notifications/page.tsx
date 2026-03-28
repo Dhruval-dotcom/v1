@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Dialog from "@/components/Dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import TiptapEditor from "@/components/TiptapEditor";
+import { CardLoader } from "@/components/Loader";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -211,10 +212,12 @@ export default function ManageNotificationsPage() {
         </div>
 
         {/* Loading / Error */}
-        {isLoading && <p className="text-gray-500 text-sm">Loading notifications...</p>}
         {error && <p className="text-red-500 text-sm">Failed to load notifications.</p>}
 
         {/* Notification Cards */}
+        {isLoading ? (
+          <CardLoader count={4} />
+        ) : (
         <div className="space-y-4">
           {notifications && notifications.length === 0 && (
             <div className="neu-flat p-8 text-center text-gray-400 text-sm">
@@ -265,6 +268,7 @@ export default function ManageNotificationsPage() {
             </div>
           ))}
         </div>
+        )}
       </div>
 
       {/* Edit Dialog */}

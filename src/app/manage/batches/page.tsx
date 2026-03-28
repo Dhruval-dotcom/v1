@@ -5,6 +5,7 @@ import useSWR from "swr";
 import Navbar from "@/components/Navbar";
 import Dialog from "@/components/Dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { TableLoader } from "@/components/Loader";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -113,9 +114,11 @@ export default function ManageBatchesPage() {
           </button>
         </div>
 
-        {isLoading && <p className="text-gray-500 text-sm">Loading...</p>}
         {error && <p className="text-red-500 text-sm">Failed to load batches.</p>}
 
+        {isLoading ? (
+          <TableLoader columns={4} rows={4} />
+        ) : (
         <div className="neu-raised overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -168,6 +171,7 @@ export default function ManageBatchesPage() {
             </table>
           </div>
         </div>
+        )}
       </div>
 
       {/* Add/Edit Dialog */}

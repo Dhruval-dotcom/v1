@@ -25,18 +25,53 @@ export async function GET(request: Request) {
       batchId = user.batchId ?? null;
     }
 
-    const where = batchId ? { batchId } : {};
+    const search = searchParams.get("search") || "";
+    const page = parseInt(searchParams.get("page") || "0");
+    const limit = parseInt(searchParams.get("limit") || "0");
+    const paginated = page > 0 && limit > 0;
 
-    const students = await prisma.student.findMany({
-      where,
-      include: {
-        batch: true,
-        adminRole: { select: { id: true } },
-      },
-      orderBy: { createdAt: "desc" },
+    const where: Record<string, unknown> = {};
+    if (batchId) where.batchId = batchId;
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { email: { contains: search, mode: "insensitive" } },
+        { phoneNumbers: { has: search } },
+      ];
+    }
+
+    if (!paginated) {
+      const students = await prisma.student.findMany({
+        where,
+        include: {
+          batch: true,
+          adminRole: { select: { id: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      return Response.json(students);
+    }
+
+    const [students, total] = await Promise.all([
+      prisma.student.findMany({
+        where,
+        include: {
+          batch: true,
+          adminRole: { select: { id: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.student.count({ where }),
+    ]);
+
+    return Response.json({
+      students,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
     });
-
-    return Response.json(students);
   } catch {
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
