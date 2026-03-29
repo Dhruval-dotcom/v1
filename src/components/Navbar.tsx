@@ -62,6 +62,7 @@ export default function Navbar() {
     { label: "Batches", href: "/manage/batches" },
     { label: "Students", href: "/manage/students" },
     { label: "Add Student", href: "/manage/students/add" },
+    { label: "Rules", href: "/manage/rules" },
     { label: "Warning Types", href: "/manage/warning-types" },
     { label: "Issue Warning", href: "/manage/warnings/new" },
     { label: "Warnings", href: "/manage/warnings" },
@@ -88,6 +89,15 @@ export default function Navbar() {
               }`}
             >
               Home
+            </Link>
+
+            <Link
+              href="/rules"
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive("/rules") ? "bg-primary text-gray-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Rules
             </Link>
 
             {linksLoading ? (
@@ -211,6 +221,9 @@ export default function Navbar() {
           <div className="md:hidden pb-4 space-y-1">
             <Link href="/" className={`block px-3 py-2 rounded-lg text-sm ${isActive("/") ? "bg-primary" : "hover:bg-gray-200"}`}>
               Home
+            </Link>
+            <Link href="/rules" className={`block px-3 py-2 rounded-lg text-sm ${isActive("/rules") ? "bg-primary" : "hover:bg-gray-200"}`}>
+              Rules
             </Link>
             {linksLoading ? (
               <div className="px-3 py-2">
