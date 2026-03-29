@@ -84,3 +84,36 @@ Issue: ${details}${actionPlan ? `\nAction Plan: ${actionPlan}` : ""}`,
   }
   throw new Error("All GROQ API keys failed");
 }
+
+export async function polishText(text: string): Promise<string> {
+  const messages: Groq.Chat.ChatCompletionMessageParam[] = [
+    {
+      role: "system",
+      content: `You are a grammar corrector. Fix ONLY grammar, spelling, and punctuation errors. Do NOT change the meaning, tone, or wording. Return the corrected text only, nothing else. If the text is already correct, return it as-is. Keep all HTML tags intact if present.`,
+    },
+    {
+      role: "user",
+      content: text,
+    },
+  ];
+
+  const maxAttempts = apiKeys.length;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const groq = getGroqClient();
+      const completion = await groq.chat.completions.create({
+        messages,
+        model: process.env.GROQ_MODEL || "llama-3.1-8b-instant",
+        temperature: 0.3,
+        max_completion_tokens: 1024,
+      });
+      rotateKey();
+      return completion.choices[0]?.message?.content?.trim() || text;
+    } catch {
+      rotateKey();
+      if (attempt === maxAttempts - 1)
+        throw new Error("All GROQ API keys failed");
+    }
+  }
+  throw new Error("All GROQ API keys failed");
+}

@@ -47,6 +47,10 @@ export default function ManageRulesPage() {
   const [ruleError, setRuleError] = useState("");
   const [ruleLoading, setRuleLoading] = useState(false);
 
+  // Polish state
+  const [polishLoading, setPolishLoading] = useState(false);
+  const [editPolishLoading, setEditPolishLoading] = useState(false);
+
   // Edit section dialog
   const [editSectionOpen, setEditSectionOpen] = useState(false);
   const [editSectionId, setEditSectionId] = useState("");
@@ -69,6 +73,46 @@ export default function ManageRulesPage() {
   const [deleteType, setDeleteType] = useState<"section" | "rule">("section");
   const [deleteId, setDeleteId] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const handlePolish = async () => {
+    if (!ruleContent.trim()) return;
+    setPolishLoading(true);
+    try {
+      const res = await fetch("/api/rules/polish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: ruleContent }),
+      });
+      const data = await res.json();
+      if (res.ok && data.polished) {
+        setRuleContent(data.polished);
+      }
+    } catch {
+      // silent fail
+    } finally {
+      setPolishLoading(false);
+    }
+  };
+
+  const handleEditPolish = async () => {
+    if (!editRuleContent.trim()) return;
+    setEditPolishLoading(true);
+    try {
+      const res = await fetch("/api/rules/polish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: editRuleContent }),
+      });
+      const data = await res.json();
+      if (res.ok && data.polished) {
+        setEditRuleContent(data.polished);
+      }
+    } catch {
+      // silent fail
+    } finally {
+      setEditPolishLoading(false);
+    }
+  };
 
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -335,6 +379,14 @@ export default function ManageRulesPage() {
                 Rule Content
               </label>
               <TiptapEditor content={ruleContent} onChange={setRuleContent} />
+              <button
+                type="button"
+                onClick={handlePolish}
+                disabled={polishLoading || !ruleContent.trim()}
+                className="neu-btn px-4 py-1.5 text-xs text-gray-600 mt-2"
+              >
+                {polishLoading ? "Polishing..." : "✨ Polish with AI"}
+              </button>
             </div>
             {ruleError && <p className="text-sm text-red-500">{ruleError}</p>}
             <button
@@ -513,6 +565,14 @@ export default function ManageRulesPage() {
               content={editRuleContent}
               onChange={setEditRuleContent}
             />
+            <button
+              type="button"
+              onClick={handleEditPolish}
+              disabled={editPolishLoading || !editRuleContent.trim()}
+              className="neu-btn px-4 py-1.5 text-xs text-gray-600 mt-2"
+            >
+              {editPolishLoading ? "Polishing..." : "✨ Polish with AI"}
+            </button>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">
